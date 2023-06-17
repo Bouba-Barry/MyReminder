@@ -5,11 +5,15 @@ import androidx.room.Room;
 
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.AlarmClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -22,9 +26,14 @@ import android.widget.PopupWindow;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private AppDatabase appDatabase;
@@ -34,6 +43,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        createNotificationChannel();
+
+        System.out.println("temps MIlllllllllllllllllllllllllll: "+System.currentTimeMillis());
+
         // ici on va initialiser la base de donnée.......
         appDatabase = Room.databaseBuilder(getApplicationContext(),
                 AppDatabase.class, "app-database").build();
@@ -42,12 +55,13 @@ public class MainActivity extends AppCompatActivity {
         // affichons en prémier la liste view..........
         listView = findViewById(R.id.taskListView);
         List<Alarme> alarmeList = new ArrayList<>();
-        alarmeList = Alarme.initAlarme();
+        //alarmeList = Alarme.initAlarme();
         //GetAllsAsyncTask alarmeList1 = new GetAllsAsyncTask(alarmeDao);
         //alarmeList1.execute();
 
-        AlarmeAdapter alarmeAdapter= new AlarmeAdapter(this, R.layout.item_list, alarmeList);
-        listView.setAdapter(alarmeAdapter);
+        //AlarmeAdapter alarmeAdapter= new AlarmeAdapter(this, R.layout.item_list, alarmeList);
+        //listView.setAdapter(alarmeAdapter);
+        getAll();
 
         ImageView addTaskIcon = findViewById(R.id.addTaskIcon);
 
@@ -73,14 +87,14 @@ public class MainActivity extends AppCompatActivity {
         mTimebtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                selectTime(mTimebtn);                                                                       //when we click on the choose time button it calls the select time method
+                selectTime(mTimebtn);
             }
         });
         mDatebtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 selectDate(mDatebtn);
-            }                                        //when we click on the choose date button it calls the select date method
+            }
         });
 
 
@@ -123,8 +137,6 @@ public class MainActivity extends AppCompatActivity {
             public void onTimeSet(TimePicker timePicker, int i, int i1) {
                 String timeTonotify = FormatTime(i, i1); // Stocke l'heure sélectionnée avec le format 12 heures
                 mTimebtn.setText(timeTonotify); // Définit le texte du bouton avec l'heure sélectionnée
-                // Appeler la méthode pour planifier l'alarme ici
-                //scheduleAlarm(timeTonotify); // Appel à une nouvelle méthode pour planifier l'alarme
             }
         }, hour, minute, false);
         timePickerDialog.show();
@@ -144,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         }, year, month, day);
         datePickerDialog.show();
     }
-    public String FormatTime(int hour, int minute) {                                                //this method converts the time into 12hr format and assigns am or pm
+    public String FormatTime(int hour, int minute) {
         String time;
         String formattedMinute;
         if (minute / 10 == 0) {
@@ -175,7 +187,11 @@ public class MainActivity extends AppCompatActivity {
         InsertAsyncTask insertAsyncTask = new InsertAsyncTask(alarmeDao);
         insertAsyncTask.execute(alarme); // Passer votre objet Alarme ici
         // on va planifier automatiquement la tâche ajouté....
+        System.out.println("Temps En Millis Seconde = "+convertDateTimeToMillis(date, time));
         scheduleNotif(alarme);
+
+        //setAlarme(title, date, time);
+        getAll();
     }
 
 
@@ -189,33 +205,62 @@ public class MainActivity extends AppCompatActivity {
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
+        long triggerTime = convertDateTimeToMillis(alarme.getCreate_date(), alarme.getTime());
+
+        // Utilisation du gestionnaire de tâches pour afficher la notification à l'heure prévue
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, convertDateTimeToMillis(alarme.getCreate_date(), alarme.getTime()), pendingIntent);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
     }
+
+
 
     /**
      * @param date
      * @param time
      * @return
      */
-    public long convertDateTimeToMillis(String date, String time){
-        // on va en prémier cinder la date....
-        String[] dateParts = date.split("-");
-        int day = Integer.parseInt(dateParts[0]);
-        int month = Integer.parseInt(dateParts[1])-1;
-        int year = Integer.parseInt(dateParts[2]);
+    public long convertDateTimeToMillis(String date, String time) {
+        SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.US);
 
-        // on va cinder le temp
-        String[] timeParts = time.split(":");
-        int hour = Integer.parseInt(timeParts[0]);
-        int minute = Integer.parseInt(timeParts[1].split(" ")[0]); // Ignorer "AM" ou "PM"
+        try {
+            Date dateTime = format.parse(date + " " + time);
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(dateTime);
 
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(year, month, day, hour, minute);
-        calendar.set(Calendar.SECOND, 0);
-
-        return calendar.getTimeInMillis();
+            return calendar.getTimeInMillis();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0; // ou une autre valeur par défaut en cas d'erreur
+        }
     }
 
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence channelName = getString(R.string.channel_name);
+            String channelId = getString(R.string.channel_id);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+
+            NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
+
+            // Configurez d'autres paramètres du canal de notification si nécessaire
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    private void getAll(){
+        GetAllsAsyncTask asyncTask = new GetAllsAsyncTask(alarmeDao, new GetAllsAsyncTask.AsyncTaskListener<List<Alarme>>() {
+            @Override
+            public void onTaskComplete(List<Alarme> alarmeList) {
+                // Traiter la liste des alarmes récupérées
+                // par exemple, mettre à jour l'Adapter de votre ListView
+                AlarmeAdapter alarmeAdapter = new AlarmeAdapter(MainActivity.this, R.layout.item_list, alarmeList);
+                listView.setAdapter(alarmeAdapter);
+            }
+        });
+
+        asyncTask.execute();
+
+    }
 }

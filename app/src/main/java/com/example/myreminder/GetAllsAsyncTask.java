@@ -8,36 +8,29 @@ import java.util.List;
 public class GetAllsAsyncTask extends AsyncTask<Void, Void, List<Alarme>> {
 
     private AlarmeDao alarmeDao;
-    protected List<Alarme> alarmeList;
-    private OnTaskCompletedListener onTaskCompletedListener;
+    private AsyncTaskListener<List<Alarme>> listener;
 
-
-    public GetAllsAsyncTask(AlarmeDao alarmeDao) {
+    public GetAllsAsyncTask(AlarmeDao alarmeDao, AsyncTaskListener<List<Alarme>> listener) {
         this.alarmeDao = alarmeDao;
-    }
-    public GetAllsAsyncTask(AlarmeDao alarmeDao, OnTaskCompletedListener listener) {
-        this.alarmeDao = alarmeDao;
-        this.onTaskCompletedListener = listener;
+        this.listener = listener;
     }
 
     @Override
     protected List<Alarme> doInBackground(Void... voids) {
-        // Récupérer toutes les tâches de la base de données
-        List<Alarme> alarmeList = new ArrayList<>();
-        alarmeList = alarmeDao.getAllAlarme();
-        return alarmeList;
+        // Récupérer tous les éléments de la base de données
+        return alarmeDao.getAllAlarme();
     }
 
     @Override
     protected void onPostExecute(List<Alarme> alarmeList) {
         super.onPostExecute(alarmeList);
-        //this.alarmeList = alarmeList;
-        onTaskCompletedListener.onTaskCompleted(alarmeList);
-
+        if (listener != null) {
+            listener.onTaskComplete(alarmeList);
+        }
     }
 
-    public interface OnTaskCompletedListener {
-        void onTaskCompleted(List<Alarme> alarmeList);
+    public interface AsyncTaskListener<T> {
+        void onTaskComplete(T result);
     }
 
 }

@@ -8,12 +8,11 @@ import android.content.Intent;
 import androidx.core.app.NotificationCompat;
 
 public class NotificationReceiver extends BroadcastReceiver {
-    @Override
     public void onReceive(Context context, Intent intent) {
         String title = intent.getStringExtra("title");
 
         // Construisez votre notification ici en utilisant NotificationCompat.Builder
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "channel_id")
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "my_channel_id")
                 .setSmallIcon(R.drawable.img_1)
                 .setContentTitle("Task Reminder")
                 .setContentText(title)
@@ -23,5 +22,8 @@ public class NotificationReceiver extends BroadcastReceiver {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(0, builder.build());
     }
+
 }
+
+
 
