@@ -11,7 +11,6 @@ public class NotificationReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String title = intent.getStringExtra("title");
 
-        // Construisez votre notification ici en utilisant NotificationCompat.Builder
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "my_channel_id")
                 .setSmallIcon(R.drawable.img_1)
                 .setContentTitle("Task Reminder")
@@ -19,7 +18,8 @@ public class NotificationReceiver extends BroadcastReceiver {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true);
 
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = (NotificationManager)
+                context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(0, builder.build());
     }
 

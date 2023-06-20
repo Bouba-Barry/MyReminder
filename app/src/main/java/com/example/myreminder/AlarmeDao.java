@@ -11,13 +11,10 @@ import java.util.List;
 public interface AlarmeDao {
     @Insert
     void insert(Alarme alarme);
-
     @Query("SELECT * FROM ALARME ORDER BY id DESC")
     List<Alarme>getAllAlarme();
-
     @Delete
     void deleteAlarme(Alarme alarme);
-
     @Query("SELECT * from Alarme where id = :param")
     Alarme getAlarme(int param);
 }

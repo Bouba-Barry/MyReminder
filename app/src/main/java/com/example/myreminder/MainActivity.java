@@ -45,8 +45,6 @@ public class MainActivity extends AppCompatActivity {
 
         createNotificationChannel();
 
-        System.out.println("temps MIlllllllllllllllllllllllllll: "+System.currentTimeMillis());
-
         // ici on va initialiser la base de donnée.......
         appDatabase = Room.databaseBuilder(getApplicationContext(),
                 AppDatabase.class, "app-database").build();
@@ -54,17 +52,9 @@ public class MainActivity extends AppCompatActivity {
 
         // affichons en prémier la liste view..........
         listView = findViewById(R.id.taskListView);
-        List<Alarme> alarmeList = new ArrayList<>();
-        //alarmeList = Alarme.initAlarme();
-        //GetAllsAsyncTask alarmeList1 = new GetAllsAsyncTask(alarmeDao);
-        //alarmeList1.execute();
 
-        //AlarmeAdapter alarmeAdapter= new AlarmeAdapter(this, R.layout.item_list, alarmeList);
-        //listView.setAdapter(alarmeAdapter);
         getAll();
-
         ImageView addTaskIcon = findViewById(R.id.addTaskIcon);
-
         addTaskIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void showAddTaskPopup(View view, ImageView addTaskIcon) {
         PopupWindow popupWindow = new PopupWindow(MainActivity.this);
-
         // Inflation du layout du popup
         LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View popupView = inflater.inflate(R.layout.popup_task, null);
@@ -99,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         Button addButton = popupView.findViewById(R.id.btnSubmit);
-
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -107,15 +95,16 @@ public class MainActivity extends AppCompatActivity {
                 String date = mDatebtn.getText().toString().trim();
                 String time = mTimebtn.getText().toString().trim();
                 if (title.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Please Enter text", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Please Enter text"
+                            , Toast.LENGTH_SHORT).show();
                 } else {
                     insertNewAlarme(title, date, time);
-                    Toast.makeText(MainActivity.this, "Title:"+title+" DateTime: "+date+time, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Title:"+title+
+                            " DateTime: "+date+time, Toast.LENGTH_SHORT).show();
                 }
                 popupWindow.dismiss();
             }
         });
-
         // ici on va configurer la longueur et larg du popup...
         int width = LinearLayout.LayoutParams.MATCH_PARENT;
         int height = LinearLayout.LayoutParams.MATCH_PARENT;
@@ -200,10 +189,13 @@ public class MainActivity extends AppCompatActivity {
      * @param alarme
      */
     public void scheduleNotif(Alarme alarme){
-        Intent notificationIntent = new Intent(MainActivity.this, NotificationReceiver.class);
+        Intent notificationIntent = new Intent(MainActivity.this,
+                NotificationReceiver.class);
         notificationIntent.putExtra("title", alarme.getTitle());
 
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this,
+                0, notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         long triggerTime = convertDateTimeToMillis(alarme.getCreate_date(), alarme.getTime());
 
@@ -239,28 +231,25 @@ public class MainActivity extends AppCompatActivity {
             CharSequence channelName = getString(R.string.channel_name);
             String channelId = getString(R.string.channel_id);
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(channelId,
+                    channelName, importance);
 
-            NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
-
-            // Configurez d'autres paramètres du canal de notification si nécessaire
-
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            NotificationManager notificationManager;
+            notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
     }
 
     private void getAll(){
-        GetAllsAsyncTask asyncTask = new GetAllsAsyncTask(alarmeDao, new GetAllsAsyncTask.AsyncTaskListener<List<Alarme>>() {
+        GetAllsAsyncTask asyncTask = new GetAllsAsyncTask(alarmeDao,
+                new GetAllsAsyncTask.AsyncTaskListener<List<Alarme>>() {
             @Override
             public void onTaskComplete(List<Alarme> alarmeList) {
-                // Traiter la liste des alarmes récupérées
-                // par exemple, mettre à jour l'Adapter de votre ListView
-                AlarmeAdapter alarmeAdapter = new AlarmeAdapter(MainActivity.this, R.layout.item_list, alarmeList);
+                AlarmeAdapter alarmeAdapter = new AlarmeAdapter(MainActivity.this,
+                        R.layout.item_list, alarmeList, alarmeDao);
                 listView.setAdapter(alarmeAdapter);
             }
         });
-
         asyncTask.execute();
-
     }
 }

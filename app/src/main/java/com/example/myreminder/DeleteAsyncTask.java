@@ -2,7 +2,7 @@ package com.example.myreminder;
 
 import android.os.AsyncTask;
 
-public class DeleteAsyncTask extends AsyncTask<Integer, Void, Alarme> {
+public class DeleteAsyncTask extends AsyncTask<Integer, Void, Boolean> {
 
     private AlarmeDao alarmeDao;
     public DeleteAsyncTask(AlarmeDao alarmeDao){
@@ -10,8 +10,13 @@ public class DeleteAsyncTask extends AsyncTask<Integer, Void, Alarme> {
 
     }
     @Override
-    protected Alarme doInBackground(Integer... integers) {
+    protected Boolean doInBackground(Integer... integers) {
+        int alarmeId = integers[0];
+        Alarme alarme = alarmeDao.getAlarme(alarmeId); // Récupérer l'objet Alarme à supprimer en fonction de son ID
 
-        return null;
+        if (alarme != null) {
+            alarmeDao.deleteAlarme(alarme); // Supprimer l'objet Alarme de la base de données
+        }
+        return true;
     }
 }

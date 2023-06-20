@@ -10,17 +10,21 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.room.Room;
 
 import java.util.List;
 
 public class AlarmeAdapter extends ArrayAdapter<Alarme> {
     private final Context context;
     private List<Alarme> alarmeList;
+    private AlarmeDao alarmeDao;
 
-    public AlarmeAdapter(@NonNull Context context, int resource, @NonNull List<Alarme> alarmeList) {
+    public AlarmeAdapter(@NonNull Context context, int resource, @NonNull List<Alarme> alarmeList, AlarmeDao alarmeDao) {
         super(context, resource, alarmeList);
         this.context = context;
         this.alarmeList = alarmeList;
+        this.alarmeDao = alarmeDao;
+
     }
 
     @NonNull
@@ -43,7 +47,9 @@ public class AlarmeAdapter extends ArrayAdapter<Alarme> {
         buttonComplete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //alarme.setTimeOut(true);
+                // une fois clicker sur le bouton done, on va supprimer l'alarme ...
+                DeleteAsyncTask deleteAsyncTask = new DeleteAsyncTask(alarmeDao);
+                deleteAsyncTask.execute(alarme.getId());
                 notifyDataSetChanged(); // Rafraîchir l'affichage de la liste
             }
         });
